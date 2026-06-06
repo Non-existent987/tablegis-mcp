@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tablegis-mcp"
+version = "0.1.0"
+description = "MCP Server for TableGIS - Geospatial data processing tools for AI assistants"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Non-existent987", email = "jiaqi0425_000@163.com" }]
+keywords = [
+    "mcp", "gis", "geospatial", "tablegis", "claude", "ai",
+    "nearest-neighbor", "buffer", "spatial-analysis"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "tablegis>=0.0.14",
+    "pandas",
+    "geopandas",
+    "shapely",
+]
+
+[project.scripts]
+tablegis-mcp = "tablegis_mcp.server:main"
+
+[project.urls]
+"Homepage" = "https://github.com/Non-existent987/tablegis-mcp"
+"Bug Tracker" = "https://github.com/Non-existent987/tablegis-mcp/issues"
+"Repository" = "https://github.com/Non-existent987/tablegis-mcp.git"
+
+[tool.setuptools.packages.find]
+where = ["src"]
