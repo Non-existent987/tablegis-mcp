@@ -1,5 +1,7 @@
 # TableGIS MCP Server
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Geospatial data processing tools for AI assistants via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/).
 
 Wraps [tablegis](https://github.com/Non-existent987/tablegis) functions as MCP tools, enabling AI clients (Claude Desktop, Cursor, etc.) to perform spatial analysis through natural language.
