@@ -34,6 +34,12 @@ dependencies = [
     "shapely",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+]
+
 [project.scripts]
 tablegis-mcp = "tablegis_mcp.server:main"
 

@@ -11,7 +11,6 @@ are serialised as WKT so they remain portable across clients.
 from __future__ import annotations
 
 import io
-import json
 import warnings
 from typing import Any
 
@@ -35,8 +34,13 @@ mcp = FastMCP("tablegis", instructions=(
 
 def _to_python_native(val: Any) -> Any:
     """Convert numpy/shapely types to JSON-serializable Python natives."""
-    if val is None or pd.isna(val):
+    if val is None:
         return None
+    try:
+        if pd.isna(val):
+            return None
+    except (TypeError, ValueError):
+        pass
     if hasattr(val, "wkt"):
         return val.wkt
     if isinstance(val, (np.integer,)):
@@ -51,6 +55,8 @@ def _to_python_native(val: Any) -> Any:
 def _parse_dataframe(data: str) -> pd.DataFrame:
     """Parse a CSV or JSON string into a DataFrame."""
     data = data.strip()
+    if not data:
+        raise ValueError("Input data is empty")
     if data.startswith("[") or data.startswith("{"):
         return pd.read_json(io.StringIO(data))
     return pd.read_csv(io.StringIO(data))
@@ -75,18 +81,22 @@ def _serialize_result(result: pd.DataFrame | gpd.GeoDataFrame) -> str:
         result = pd.DataFrame(result)
     # Convert non-serializable types (numpy ints/floats) to native Python types
     result = result.copy()
-    for col in result.columns:
-        result[col] = result[col].apply(_to_python_native)
+    if len(result) > 0:
+        for col in result.columns:
+            result[col] = result[col].apply(_to_python_native)
     return result.to_json(orient="records", force_ascii=False)
 
 
 def _gdf_from_json_with_geometry(data: str, geometry_col: str = "geometry",
                                   crs: str = "EPSG:4326") -> gpd.GeoDataFrame:
     """Parse JSON that contains a WKT geometry column into a GeoDataFrame."""
-    df = pd.read_json(io.StringIO(data.strip()))
+    data = data.strip()
+    if not data:
+        raise ValueError("Input data is empty")
+    df = pd.read_json(io.StringIO(data))
     if geometry_col in df.columns:
         df[geometry_col] = df[geometry_col].apply(
-            lambda w: shapely_wkt.loads(w) if pd.notna(w) else None
+            lambda w: shapely_wkt.loads(w) if pd.notna(w) and isinstance(w, str) else None
         )
     return gpd.GeoDataFrame(df, geometry=geometry_col, crs=crs)
 
@@ -136,10 +146,10 @@ def nearest_neighbor_one_table(
 def nearest_neighbor_two_tables(
     data1: str,
     data2: str,
-    lon1: str = "lon1",
-    lat1: str = "lat1",
-    lon2: str = "lon2",
-    lat2: str = "lat2",
+    lon1: str = "lon",
+    lat1: str = "lat",
+    lon2: str = "lon",
+    lat2: str = "lat",
     df2_id: str = "id",
     n: int = 1,
 ) -> str:
@@ -155,9 +165,9 @@ def nearest_neighbor_two_tables(
     data2 : str
         Target table (CSV or JSON) containing reference points.
     lon1, lat1 : str
-        Longitude/latitude column names in data1 (default "lon1"/"lat1").
+        Longitude/latitude column names in data1 (default "lon"/"lat").
     lon2, lat2 : str
-        Longitude/latitude column names in data2 (default "lon2"/"lat2").
+        Longitude/latitude column names in data2 (default "lon"/"lat").
     df2_id : str
         Identifier column in data2 (default "id").
     n : int
@@ -175,8 +185,8 @@ def create_buffer(
     data: str,
     lon: str = "lon",
     lat: str = "lat",
-    dis: float | str = 1000,
-    min_distance: float | str | None = None,
+    dis: float = 1000,
+    min_distance: float | None = None,
     geometry: str = "geometry",
 ) -> str:
     """Create accurate buffers in metres around points.
@@ -191,10 +201,9 @@ def create_buffer(
         Input table (CSV or JSON) with lon/lat columns.
     lon, lat : str
         Longitude/latitude column names (default "lon"/"lat").
-    dis : float or str
-        Outer buffer distance in metres.  If a string, treated as a column
-        name containing per-row distances (default 1000).
-    min_distance : float or str, optional
+    dis : float
+        Outer buffer distance in metres (default 1000).
+    min_distance : float, optional
         Inner radius for ring buffers in metres.  If None, creates a filled
         circle.
     geometry : str
@@ -255,10 +264,10 @@ def create_sector(
     data: str,
     lon: str = "lon",
     lat: str = "lat",
-    azimuth: float | str = 0,
-    distance: float | str = 1000,
-    angle: float | str = 60,
-    difference_distance: float | str | None = None,
+    azimuth: float = 0,
+    distance: float = 1000,
+    angle: float = 60,
+    difference_distance: float | None = None,
     geometry: str = "geometry",
 ) -> str:
     """Create sector (wedge) polygons around points.
@@ -272,14 +281,14 @@ def create_sector(
         Input table (CSV or JSON) with lon/lat columns.
     lon, lat : str
         Longitude/latitude column names (default "lon"/"lat").
-    azimuth : float or str
-        Bearing in degrees (0 = north, clockwise).  String = column name.
-    distance : float or str
-        Outer radius in metres.  String = column name.
-    angle : float or str
-        Total sector angle in degrees.  String = column name.
-    difference_distance : float or str, optional
-        Inner radius for ring-sector in metres.  String = column name.
+    azimuth : float
+        Bearing in degrees (0 = north, clockwise) (default 0).
+    distance : float
+        Outer radius in metres (default 1000).
+    angle : float
+        Total sector angle in degrees (default 60).
+    difference_distance : float, optional
+        Inner radius for ring-sector in metres.
     geometry : str
         Output geometry column name (default "geometry").
     """
@@ -333,7 +342,7 @@ def calculate_area(
     Parameters
     ----------
     data : str
-        Input GeoJSON or JSON string with a WKT geometry column.
+        Input JSON string with a WKT geometry column.
     geometry_col : str
         Name of the geometry column (default "geometry").
     column : str
@@ -363,7 +372,7 @@ def buffer_geometries(
     Parameters
     ----------
     data : str
-        Input GeoJSON or JSON string with a WKT geometry column.
+        Input JSON string with a WKT geometry column.
     distance : float
         Buffer distance in metres.  Positive = expand, negative = shrink.
     geometry_col : str

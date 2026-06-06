@@ -62,6 +62,34 @@ Or if installed via pip:
 }
 ```
 
+### Claude Code
+
+Add to `~/.claude.json` (global) or project-level `.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "tablegis": {
+      "command": "uvx",
+      "args": ["tablegis-mcp"]
+    }
+  }
+}
+```
+
+Or with pip:
+
+```json
+{
+  "mcpServers": {
+    "tablegis": {
+      "command": "python",
+      "args": ["-m", "tablegis_mcp.server"]
+    }
+  }
+}
+```
+
 ### Cursor / Other MCP Clients
 
 Use the same command configuration. The server communicates via stdio transport.
