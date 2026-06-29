@@ -143,6 +143,12 @@ uvx tablegis-mcp
 
 > "加载这个Excel文件，只需要城市和经纬度这几列"
 
+> "源文件更新了，重新加载站点规划sheet"
+
+> "帮我读这个321MB的规划数据，然后画出每个站点500米缓冲区"
+
+> "读这个CSV文件中的营收数据"
+
 **`fast_read_table` — 大型Excel/CSV快速读取**
 
 使用 Polars + Calamine（Rust引擎）解析Excel，比 openpyxl 快 10-50 倍。首次读取后自动缓存为 Parquet 格式，后续加载接近瞬时完成。**指定sheet时只转换该sheet，不会转换其他sheet**。
@@ -153,9 +159,51 @@ uvx tablegis-mcp
 |------|------|--------|------|
 | `file` | str | 必填 | Excel或CSV文件路径 |
 | `sheet` | str | None | sheet名称（仅Excel），None=全部sheet |
-| `columns` | str | None | 只加载指定列，逗号分隔（如"城市,经度,纬度"） |
+| `columns` | str | None | 只加载指定列，逗号分隔（如"城市,经度,纬度") |
 | `refresh` | bool | False | 强制重新转换（源文件更新后使用） |
 | `to_pandas` | bool | True | 返回JSON记录（True）或元数据摘要（False） |
+
+**示例：**
+
+```
+# 基本用法：读取单个sheet
+"读取 /data/planning.xlsx 的站点信息sheet"
+→ fast_read_table(file="/data/planning.xlsx", sheet="站点信息")
+
+# 只加载指定列（更快更省内存）
+"加载这个Excel文件，只需要城市和经纬度这几列"
+→ fast_read_table(file="/data/planning.xlsx", sheet="站点信息", columns="城市,经度,纬度")
+
+# 读取全部sheet
+"这个Excel文件有哪些sheet，帮我全部读出来"
+→ fast_read_table(file="/data/planning.xlsx")
+
+# 读取CSV文件
+"帮我读这个CSV文件"
+→ fast_read_table(file="/data/sales.csv")
+
+# 源文件更新后刷新
+"源文件更新了，重新加载站点规划sheet"
+→ fast_read_table(file="/data/planning.xlsx", sheet="站点规划", refresh=True)
+```
+
+**多步骤自然语言示例：**
+
+```
+# 读取数据 + 创建缓冲区
+"读这个规划数据文件的站点信息sheet，然后给每个站点画500米缓冲区"
+
+# 读取数据 + 最近邻查询
+"加载门店数据，然后帮我算每家店最近的3个邻居"
+
+# 大文件只取需要的列
+"这个Excel太大了，我只需要summary sheet的city和revenue列"
+→ fast_read_table(file="/data/big_report.xlsx", sheet="summary", columns="city,revenue")
+
+# 数据管道场景
+"每小时自动刷新一次指标数据"
+→ fast_read_table(file="/data/live_metrics.xlsx", sheet="metrics", refresh=True)
+```
 
 **性能对比**（290万行、10个sheet、321MB Excel文件）：
 

@@ -129,14 +129,39 @@ This tool reads Excel (.xlsx/.xlsb) and CSV files using Polars + Calamine (Rust 
 **Examples:**
 
 ```
+# Basic: read a single sheet
 "Read the 站点信息 sheet from /data/planning.xlsx"
 → fast_read_table(file="/data/planning.xlsx", sheet="站点信息")
 
+# Load only specific columns (faster, less memory)
 "Load only the city and coordinates columns"
 → fast_read_table(file="/data/planning.xlsx", sheet="站点信息", columns="城市,经度,纬度")
 
+# Read all sheets
 "Read all sheets from this Excel file"
 → fast_read_table(file="/data/planning.xlsx")
+
+# Read a CSV file
+"Load this CSV data file"
+→ fast_read_table(file="/data/sales.csv")
+
+# Refresh after source file update
+"The Excel file was updated, reload the 站点信息 sheet"
+→ fast_read_table(file="/data/planning.xlsx", sheet="站点信息", refresh=True)
+```
+
+**Natural language workflow examples:**
+
+```
+# Multi-step: read data then create buffers
+"Read the station data from planning.xlsx (站点规划 sheet), then draw 500m buffers around each station"
+
+# Multi-step: read data then find nearest neighbors
+"Load the store locations from stores.xlsx and find the nearest 3 neighbors for each store"
+
+# Selective analysis on a large file
+"I have a huge Excel file — just load the city and revenue columns from the 'summary' sheet"
+→ fast_read_table(file="/data/big_report.xlsx", sheet="summary", columns="city,revenue")
 ```
 
 **Performance** (290M rows, 10 sheets, 321MB Excel):
