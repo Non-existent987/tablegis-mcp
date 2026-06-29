@@ -11,6 +11,7 @@ are serialised as WKT so they remain portable across clients.
 from __future__ import annotations
 
 import io
+import json
 import warnings
 from typing import Any
 
@@ -497,6 +498,62 @@ def match_spatial_layer(
                              match_method=match_method, sep=sep,
                              predicate=predicate)
     return _serialize_result(result)
+
+
+@mcp.tool()
+def fast_read_table(
+    file: str,
+    sheet: str | None = None,
+    columns: str | None = None,
+    refresh: bool = False,
+    to_pandas: bool = True,
+) -> str:
+    """Quickly read a large Excel (.xlsx/.xlsb) or CSV (.csv) file with
+    automatic Parquet caching for near-instant subsequent reads.
+
+    Uses Polars + Calamine (Rust engine) to parse Excel 10-50x faster than
+    openpyxl.  First read converts the requested sheet(s) to Parquet; later
+    reads load from the cache in milliseconds.  **Only the sheet you request
+    is converted** — other sheets are not touched.
+
+    Parameters
+    ----------
+    file : str
+        Path to the Excel or CSV file.
+    sheet : str, optional
+        Sheet name (Excel only).  None = return all sheets as a dict.
+    columns : str, optional
+        Comma-separated column names to load only those columns
+        (faster, less memory).  Example: "城市,经度,纬度".
+    refresh : bool
+        True = force re-convert (use after source file is updated).
+    to_pandas : bool
+        True = return result as JSON records (pandas-like, compatible with
+        other tablegis tools).  False = return polars metadata summary.
+    """
+    cols = [c.strip() for c in columns.split(",")] if columns else None
+
+    result = tg.fast_read(file, sheet=sheet, columns=cols, refresh=refresh,
+                          to_pandas=to_pandas)
+
+    # Handle two return types
+    if isinstance(result, dict):
+        # All sheets — serialize each sheet's DataFrame
+        out = {}
+        for name, df in result.items():
+            if isinstance(df, pd.DataFrame):
+                out[name] = json.loads(_serialize_result(df))
+            else:
+                # polars DataFrame — convert to pandas first
+                out[name] = json.loads(_serialize_result(df.to_pandas()))
+        return json.dumps(out, ensure_ascii=False)
+    else:
+        # Single DataFrame
+        if isinstance(result, pd.DataFrame):
+            return _serialize_result(result)
+        else:
+            # polars DataFrame
+            return _serialize_result(result.to_pandas())
 
 
 # ===========================================================================

@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tablegis-mcp"
-version = "0.1.1"
+version = "0.2.0"
 description = "MCP Server for TableGIS - Geospatial data processing tools for AI assistants"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Non-existent987", email = "jiaqi0425_000@163.com" }]
 keywords = [
     "mcp", "gis", "geospatial", "tablegis", "claude", "ai",
-    "nearest-neighbor", "buffer", "spatial-analysis"
+    "nearest-neighbor", "buffer", "spatial-analysis", "fast-read", "polars", "parquet"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,10 +28,13 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.0.0",
-    "tablegis>=0.0.14",
+    "tablegis>=0.0.15",
     "pandas",
     "geopandas",
     "shapely",
+    "polars",
+    "python-calamine",
+    "fastexcel",
 ]
 
 [project.optional-dependencies]

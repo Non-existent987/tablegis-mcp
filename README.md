@@ -21,6 +21,7 @@ Wraps [tablegis](https://github.com/Non-existent987/tablegis) functions as MCP t
 | `cluster_by_distance` | Group nearby points into clusters by buffer distance |
 | `convert_coordinates` | Convert between Chinese coordinate systems (WGS84/GCJ02/BD09) |
 | `match_spatial_layer` | Spatial join: match points to a polygon layer file |
+| `fast_read_table` | Read large Excel/CSV files with Parquet caching (10-50x faster) |
 
 ## Install
 
@@ -106,8 +107,45 @@ Once configured, you can ask your AI assistant:
 - "Group points within 500m into clusters"
 - "Match these coordinates to a shapefile of administrative boundaries"
 - "Convert these WGS84 coordinates to GCJ-02 (Amap/高德)"
+- "Read this large Excel file and show me the first 10 rows"
+- "Load the 站点信息 sheet from the planning data file"
 
 Data is passed as CSV or JSON strings; geometry results are returned as WKT.
+
+### `fast_read_table` — Fast Large File Reading
+
+This tool reads Excel (.xlsx/.xlsb) and CSV files using Polars + Calamine (Rust engine), which is 10-50x faster than openpyxl. The first read automatically caches data as Parquet; subsequent reads load from cache in milliseconds. **Only the requested sheet is converted** — other sheets are not touched.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `file` | str | required | Path to the Excel or CSV file |
+| `sheet` | str | None | Sheet name (Excel only). None = all sheets |
+| `columns` | str | None | Comma-separated column names to load (e.g. "城市,经度,纬度") |
+| `refresh` | bool | False | Force re-convert after source file is updated |
+| `to_pandas` | bool | True | Return as JSON records (True) or metadata summary (False) |
+
+**Examples:**
+
+```
+"Read the 站点信息 sheet from /data/planning.xlsx"
+→ fast_read_table(file="/data/planning.xlsx", sheet="站点信息")
+
+"Load only the city and coordinates columns"
+→ fast_read_table(file="/data/planning.xlsx", sheet="站点信息", columns="城市,经度,纬度")
+
+"Read all sheets from this Excel file"
+→ fast_read_table(file="/data/planning.xlsx")
+```
+
+**Performance** (290M rows, 10 sheets, 321MB Excel):
+
+| Method | Single sheet (147K rows) | All sheets (2.9M rows) |
+|--------|-------------------------|------------------------|
+| `pandas.read_excel` | 244s | ~40min |
+| `fast_read_table` (first time) | ~5s | ~2.5min |
+| `fast_read_table` (cached) | **0.02s** | **0.12s** |
 
 ## Development
 

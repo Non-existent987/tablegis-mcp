@@ -23,6 +23,7 @@
 | `cluster_by_distance` | 按距离将邻近的点聚类并分配聚类 ID |
 | `convert_coordinates` | 坐标系转换（WGS84/GCJ02/BD09/CGCS2000/Web Mercator） |
 | `match_spatial_layer` | 空间连接：将点匹配到矢量图层（shp/GeoJSON）并添加属性 |
+| `fast_read_table` | 大型Excel/CSV快速读取（Parquet缓存加速，快10-50倍） |
 
 ## 安装
 
@@ -135,6 +136,34 @@ uvx tablegis-mcp
 ### 7、空间属性匹配
 
 > "把这些坐标点匹配到行政区划 shapefile，把区名加进来"
+
+### 8、大型文件快速读取
+
+> "读取这个规划数据文件的站点信息sheet"
+
+> "加载这个Excel文件，只需要城市和经纬度这几列"
+
+**`fast_read_table` — 大型Excel/CSV快速读取**
+
+使用 Polars + Calamine（Rust引擎）解析Excel，比 openpyxl 快 10-50 倍。首次读取后自动缓存为 Parquet 格式，后续加载接近瞬时完成。**指定sheet时只转换该sheet，不会转换其他sheet**。
+
+**参数：**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `file` | str | 必填 | Excel或CSV文件路径 |
+| `sheet` | str | None | sheet名称（仅Excel），None=全部sheet |
+| `columns` | str | None | 只加载指定列，逗号分隔（如"城市,经度,纬度"） |
+| `refresh` | bool | False | 强制重新转换（源文件更新后使用） |
+| `to_pandas` | bool | True | 返回JSON记录（True）或元数据摘要（False） |
+
+**性能对比**（290万行、10个sheet、321MB Excel文件）：
+
+| 方法 | 单sheet（14.7万行） | 全量（290万行） |
+|------|---------------------|----------------|
+| `pandas.read_excel` | 244秒 | ~40分钟 |
+| `fast_read_table`（首次） | ~5秒 | ~2.5分钟 |
+| `fast_read_table`（缓存） | **0.02秒** | **0.12秒** |
 
 ## 数据格式说明
 
