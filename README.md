@@ -21,7 +21,7 @@ Wraps [tablegis](https://github.com/Non-existent987/tablegis) functions as MCP t
 | `cluster_by_distance` | Group nearby points into clusters by buffer distance |
 | `convert_coordinates` | Convert between Chinese coordinate systems (WGS84/GCJ02/BD09) |
 | `match_spatial_layer` | Spatial join: match points to a polygon layer file |
-| `fast_read_table` | Read large Excel/CSV files with Parquet caching (10-50x faster) |
+| `fast_read_table` | Read any table (xlsx/xlsb/ods/csv/txt/tsv) with Parquet caching + auto sep/encoding |
 | `read_xlsx_sheetnames` | List sheet names of an .xlsx file instantly (pure stdlib, ms-level) |
 | `read_xlsx_table` | One-shot fast xlsx → JSON records (no cache) |
 | `convert_xlsx_to_csv` | Fast xlsx → CSV file(s) on disk |

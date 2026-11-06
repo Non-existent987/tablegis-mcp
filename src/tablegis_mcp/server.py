@@ -503,38 +503,47 @@ def match_spatial_layer(
 @mcp.tool()
 def fast_read_table(
     file: str,
-    sheet: str | None = None,
+    sheet: str | int | None = None,
     columns: str | None = None,
+    sep: str | None = None,
     refresh: bool = False,
     to_pandas: bool = True,
+    cache: bool = True,
 ) -> str:
-    """Quickly read a large Excel (.xlsx/.xlsb) or CSV (.csv) file with
-    automatic Parquet caching for near-instant subsequent reads.
+    """Quickly read any table file (.xlsx/.xlsb/.xls/.ods/.csv/.txt/.tsv/.dat)
+    with automatic Parquet caching for near-instant subsequent reads.
 
-    Uses Polars + Calamine (Rust engine) to parse Excel 10-50x faster than
-    openpyxl.  First read converts the requested sheet(s) to Parquet; later
-    reads load from the cache in milliseconds.  **Only the sheet you request
-    is converted** — other sheets are not touched.
+    Excel's first sheet is parsed by the built-in C++ engine (1-2 orders of
+    magnitude faster than openpyxl); text files get automatic encoding
+    (UTF-8/GBK) and separator detection.  First read converts the requested
+    sheet(s) to Parquet; later reads load from the cache in about a second
+    per 500k rows.  **Only the sheet you request is converted.**
 
     Parameters
     ----------
     file : str
-        Path to the Excel or CSV file.
-    sheet : str, optional
-        Sheet name (Excel only).  None = return all sheets as a dict.
+        Path to the table file.
+    sheet : str or int, optional
+        Sheet name or index (Excel only).  None = return all sheets as a dict.
     columns : str, optional
         Comma-separated column names to load only those columns
         (faster, less memory).  Example: "城市,经度,纬度".
+    sep : str, optional
+        Column separator for text files (e.g. "\\t", ";", "|").
+        None = auto-detect.
     refresh : bool
         True = force re-convert (use after source file is updated).
     to_pandas : bool
         True = return result as JSON records (pandas-like, compatible with
         other tablegis tools).  False = return polars metadata summary.
+    cache : bool
+        True = use the Parquet cache.  False = one-shot read, no files
+        written to disk.
     """
     cols = [c.strip() for c in columns.split(",")] if columns else None
 
-    result = tg.fast_read(file, sheet=sheet, columns=cols, refresh=refresh,
-                          to_pandas=to_pandas)
+    result = tg.fast_read(file, sheet=sheet, columns=cols, sep=sep,
+                          refresh=refresh, to_pandas=to_pandas, cache=cache)
 
     # Handle two return types
     if isinstance(result, dict):
