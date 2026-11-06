@@ -22,6 +22,9 @@ Wraps [tablegis](https://github.com/Non-existent987/tablegis) functions as MCP t
 | `convert_coordinates` | Convert between Chinese coordinate systems (WGS84/GCJ02/BD09) |
 | `match_spatial_layer` | Spatial join: match points to a polygon layer file |
 | `fast_read_table` | Read large Excel/CSV files with Parquet caching (10-50x faster) |
+| `read_xlsx_sheetnames` | List sheet names of an .xlsx file instantly (pure stdlib, ms-level) |
+| `read_xlsx_table` | One-shot fast xlsx → JSON records (no cache) |
+| `convert_xlsx_to_csv` | Fast xlsx → CSV file(s) on disk |
 
 ## Install
 

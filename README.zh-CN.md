@@ -24,6 +24,9 @@
 | `convert_coordinates` | 坐标系转换（WGS84/GCJ02/BD09/CGCS2000/Web Mercator） |
 | `match_spatial_layer` | 空间连接：将点匹配到矢量图层（shp/GeoJSON）并添加属性 |
 | `fast_read_table` | 大型Excel/CSV快速读取（Parquet缓存加速，快10-50倍） |
+| `read_xlsx_sheetnames` | 毫秒级提取 .xlsx 的 sheet 名称列表（纯标准库） |
+| `read_xlsx_table` | 一次性快速读取 xlsx → JSON 记录（无缓存） |
+| `convert_xlsx_to_csv` | 快速将 xlsx 转换为 CSV 文件 |
 
 ## 安装
 

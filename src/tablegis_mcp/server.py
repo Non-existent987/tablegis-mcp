@@ -556,6 +556,87 @@ def fast_read_table(
             return _serialize_result(result.to_pandas())
 
 
+@mcp.tool()
+def read_xlsx_sheetnames(file: str) -> str:
+    """List sheet names of an .xlsx file instantly (pure stdlib, millisecond-level).
+
+    Only reads xl/workbook.xml from the zip container — no cell parsing,
+    no calamine/polars dependency.  Works even on huge workbooks.
+
+    Parameters
+    ----------
+    file : str
+        Path to the .xlsx file.
+
+    Returns
+    -------
+    JSON string with sheet names in workbook order.
+    """
+    names = tg.read_xlsx_sheetnames(file)
+    return json.dumps({"sheets": names}, ensure_ascii=False)
+
+
+@mcp.tool()
+def read_xlsx_table(
+    file: str,
+    sheet: int | str = 0,
+    columns: str | None = None,
+) -> str:
+    """Read an xlsx/xlsb file fast and return the table as JSON records.
+
+    One-shot read (no cache, no intermediate files).  Uses the native
+    C++ extension / bundled exe backend for the first sheet (10-30x
+    faster), falling back to Calamine.  Much faster than
+    pandas.read_excel for large files.
+
+    Parameters
+    ----------
+    file : str
+        Path to the xlsx/xlsb file.
+    sheet : int or str
+        Sheet index (0-based) or sheet name (default 0 = first sheet).
+    columns : str, optional
+        Comma-separated column names to load only those columns.
+        Example: "城市,经度,纬度".
+    """
+    cols = [c.strip() for c in columns.split(",")] if columns else None
+    df = tg.read_xlsx(file, sheet=sheet, columns=cols)
+    return _serialize_result(df)
+
+
+@mcp.tool()
+def convert_xlsx_to_csv(
+    xlsx: str,
+    csv: str | None = None,
+    sheet: int | str | None = 0,
+) -> str:
+    """Convert an xlsx/xlsb file to CSV file(s) on disk.
+
+    Fast conversion (Calamine read + Polars write, native C++ backend
+    for the first sheet).  No cache.
+
+    Parameters
+    ----------
+    xlsx : str
+        Path to the xlsx/xlsb file.
+    csv : str, optional
+        Output CSV path.  Defaults to same name as source
+        (data.xlsx -> data.csv).  When converting all sheets without
+        an explicit path, each sheet gets its own file:
+        data.xlsx -> data_表名.csv.
+    sheet : int, str or None
+        Sheet index (0-based) or name; None = convert ALL sheets
+        (default 0 = first sheet).
+
+    Returns
+    -------
+    JSON string with the list of generated CSV paths.
+    """
+    result = tg.xlsx2csv(xlsx, csv=csv, sheet=sheet)
+    paths = result if isinstance(result, list) else [result]
+    return json.dumps({"csv_files": paths}, ensure_ascii=False)
+
+
 # ===========================================================================
 # Entry point
 # ===========================================================================
